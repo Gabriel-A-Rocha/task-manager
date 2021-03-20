@@ -47,11 +47,24 @@ app.post("/users", (request, response) => {
 app.get("/todos", checksExistsUserAccount, (request, response) => {
   const { foundUser } = request;
 
-  return response.status(200).json(foundUser);
+  return response.status(200).json(foundUser.todos);
 });
 
 app.post("/todos", checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const { foundUser } = request;
+  const { title, deadline } = request.body;
+
+  const newTodo = {
+    id: uuidv4(),
+    title,
+    done: false,
+    deadline: new Date(deadline),
+    created_at: new Date(),
+  };
+
+  foundUser.todos.push(newTodo);
+
+  return response.status(201).json(newTodo);
 });
 
 app.put("/todos/:id", checksExistsUserAccount, (request, response) => {

@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 
-// const { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require("uuid");
 
 const app = express();
 
@@ -11,19 +11,43 @@ app.use(express.json());
 const port = 3333;
 app.listen(port, () => console.log(`Server started at port ${port}`));
 
-// const users = [];
+const users = [];
 
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+  const { username } = request.headers;
+
+  const foundUser = users.find((u) => (u.username = username));
+
+  if (foundUser) {
+    request.foundUser = foundUser;
+  } else {
+    return response
+      .status(400)
+      .json({ error: `username ${username} not found` });
+  }
+
+  next();
 }
 
 app.post("/users", (request, response) => {
-  // Complete aqui
-  return response.status(200).json({ msg: "Done!" });
+  const { name, username } = request.body;
+
+  const newUser = {
+    id: uuidv4(),
+    name,
+    username,
+    todos: [],
+  };
+
+  users.push(newUser);
+
+  return response.status(200).json(newUser);
 });
 
 app.get("/todos", checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const { foundUser } = request;
+
+  return response.status(200).json(foundUser);
 });
 
 app.post("/todos", checksExistsUserAccount, (request, response) => {

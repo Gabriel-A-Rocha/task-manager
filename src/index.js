@@ -8,7 +8,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const port = 3333;
+// workaround to prevent tests clash with the same port
+function getRandomPort(min, max) {
+  return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
+const port = getRandomPort(3333, 5555);
 app.listen(port, () => console.log(`Server started at port ${port}`));
 
 const users = [];
@@ -16,15 +21,15 @@ const users = [];
 function checksExistsUserAccount(request, response, next) {
   const { username } = request.headers;
 
-  const foundUser = users.find((u) => (u.username = username));
+  const foundUser = users.find((u) => u.username === username);
 
-  if (foundUser) {
-    request.foundUser = foundUser;
-  } else {
+  if (!foundUser) {
     return response
       .status(400)
       .json({ error: `username ${username} not found` });
   }
+
+  request.foundUser = foundUser;
 
   next();
 }
@@ -52,6 +57,7 @@ app.post("/users", (request, response) => {
 
 app.get("/todos", checksExistsUserAccount, (request, response) => {
   const { foundUser } = request;
+  console.log("🚀 ~ file: index.js ~ line 62 ~ app.get ~ foundUser", foundUser);
 
   return response.status(200).json(foundUser.todos);
 });
@@ -112,7 +118,7 @@ app.delete("/todos/:id", checksExistsUserAccount, (request, response) => {
 
   const todoIndex = foundUser.todos.findIndex((t) => t.id === id);
 
-  if (todoIndex < 0) {
+  if (todoIndex === -1) {
     return response.status(404).json({ error: "Todo item not found" });
   }
 

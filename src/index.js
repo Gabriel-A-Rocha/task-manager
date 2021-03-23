@@ -32,6 +32,12 @@ function checksExistsUserAccount(request, response, next) {
 app.post("/users", (request, response) => {
   const { name, username } = request.body;
 
+  const duplicateUsername = users.some((u) => u.username === username);
+
+  if (duplicateUsername) {
+    return response.status(400).json({ error: "Username already created" });
+  }
+
   const newUser = {
     id: uuidv4(),
     name,
@@ -41,7 +47,7 @@ app.post("/users", (request, response) => {
 
   users.push(newUser);
 
-  return response.status(200).json(newUser);
+  return response.status(201).json(newUser);
 });
 
 app.get("/todos", checksExistsUserAccount, (request, response) => {
@@ -75,22 +81,44 @@ app.put("/todos/:id", checksExistsUserAccount, (request, response) => {
 
   const foundTodo = foundUser.todos.find((t) => t.id === id);
 
-  if (foundTodo) {
-    foundTodo.title = title;
-    foundTodo.deadline = new Date(deadline);
-  } else {
-    return response.status(400).json({ error: "ToDo item not found" });
+  if (!foundTodo) {
+    return response.status(404).json({ error: "ToDo item not found" });
   }
+
+  foundTodo.title = title;
+  foundTodo.deadline = new Date(deadline);
 
   return response.status(200).json(foundTodo);
 });
 
 app.patch("/todos/:id/done", checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const { id } = request.params;
+  const { foundUser } = request;
+
+  const foundTodo = foundUser.todos.find((t) => t.id === id);
+
+  if (!foundTodo) {
+    return response.status(404).json({ error: "Todo not found" });
+  }
+
+  foundTodo.done = true;
+
+  return response.status(201).json(foundTodo);
 });
 
 app.delete("/todos/:id", checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const { id } = request.params;
+  const { foundUser } = request;
+
+  const todoIndex = foundUser.todos.findIndex((t) => t.id === id);
+
+  if (todoIndex < 0) {
+    return response.status(404).json({ error: "Todo item not found" });
+  }
+
+  foundUser.todos.splice(todoIndex, 1);
+
+  return response.status(204).send();
 });
 
 module.exports = app;
